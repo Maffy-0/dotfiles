@@ -1,3 +1,4 @@
 # .gitignore
 
 zsh/secret.zsh
+zsh/_*
