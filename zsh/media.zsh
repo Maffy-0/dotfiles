@@ -2,16 +2,42 @@
 
 # MP4 を 720p HEVC に変換
 resizemp4() {
-    if [ $# -ne 2 ]; then
-        echo "Usage: resizemp4 input.mp4 output.mp4"
+    if [ $# -eq 1 ]; then
+        input="$1"
+        tmp="${input%.mp4}_tmp.mp4"
+
+        echo "The input file will be resized and overwritten."
+        read "answer?Do you want to continue? [y/N] "
+        case "$answer" in
+            [Yy]*);;
+            *) echo "Operation cancelled."; return 1;;
+        esac
+
+        ffmpeg -i "$input" \
+          -vf scale=1280:720 -c:v hevc_videotoolbox -b:v 2500k \
+          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
+          "$tmp"
+
+        if [ $? -eq 0 ]; then
+            mv "$tmp" "$input"
+            echo "Successfully overwritten."
+        else
+            echo "An error occurred during processing. The temporary file has been kept."
+            return 1
+        fi
+
+    elif [ $# -eq 2 ]; then
+        ffmpeg -i "$1" \
+          -vf scale=1280:720 -c:v hevc_videotoolbox -b:v 2500k \
+          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
+          "$2"
+    else
+        echo "Usage: resizemp4 input.mp4 [output.mp4]"
         return 1
     fi
-
-    ffmpeg -i "$1" \
-      -vf scale=1280:720 -c:v hevc_videotoolbox -b:v 2500k \
-      -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
-      "$2"
 }
+
+
 
 # 画像の長辺 or 縦サイズ基準縮小（デフォルト 720）
 resizeimg() {
