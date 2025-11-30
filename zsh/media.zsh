@@ -1,9 +1,23 @@
 # ~/.zsh/media.zsh
 
-# MP4 を 720p HEVC に変換
+# MP4 を HEVC に変換（ビットレート・解像度指定に対応）
 resizemp4() {
-    if [ $# -eq 1 ]; then
-        input="$1"
+    if [ $# -lt 1 ] || [ $# -gt 4 ]; then
+        echo "Usage: resizemp4 input.mp4 [bitrate] [height] [output.mp4]"
+        echo "  bitrate の例: 800k, 1000k, 1500k （省略時 1000k）"
+        echo "  height の例: 480, 720, 1080       （省略時 720）"
+        return 1
+    fi
+
+    input="$1"
+    bitrate="${2:-1000k}"
+    height="${3:-720}"
+
+    # width はアスペクト比維持で自動計算する（-2 を指定）
+    scale_opt="scale=-2:${height}"
+
+    if [ $# -le 3 ]; then
+        # 上書きモード
         tmp="${input%.mp4}_tmp.mp4"
 
         echo "The input file will be resized and overwritten."
@@ -14,7 +28,8 @@ resizemp4() {
         esac
 
         ffmpeg -i "$input" \
-          -vf scale=1280:720 -c:v hevc_videotoolbox -b:v 2500k \
+          -vf "$scale_opt" \
+          -c:v hevc_videotoolbox -b:v "$bitrate" \
           -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
           "$tmp"
 
@@ -26,17 +41,17 @@ resizemp4() {
             return 1
         fi
 
-    elif [ $# -eq 2 ]; then
-        ffmpeg -i "$1" \
-          -vf scale=1280:720 -c:v hevc_videotoolbox -b:v 2500k \
-          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
-          "$2"
     else
-        echo "Usage: resizemp4 input.mp4 [output.mp4]"
-        return 1
+        # 別ファイル出力モード
+        output="$4"
+
+        ffmpeg -i "$input" \
+          -vf "$scale_opt" \
+          -c:v hevc_videotoolbox -b:v "$bitrate" \
+          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
+          "$output"
     fi
 }
-
 
 
 # 画像の長辺 or 縦サイズ基準縮小（デフォルト 720）
