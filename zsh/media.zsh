@@ -113,3 +113,29 @@ converttopdf() {
     convert "$input" "$output"
 }
 
+# WebM → MP4
+convertwebm() {
+  if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "使い方: convertwebm input.webm [output.mp4]"
+    return 1
+  fi
+
+  local input="$1"
+  local output="${2:-${input%.*}.mp4}"
+
+  if [ ! -f "$input" ]; then
+    echo "入力ファイルが存在しません: $input"
+    return 1
+  fi
+
+  ffmpeg -i "$input" \
+    -c:v libx264 \
+    -preset medium \
+    -crf 23 \
+    -c:a aac \
+    -b:a 128k \
+    -movflags +faststart \
+    "$output"
+
+  echo "変換完了: $output"
+}
