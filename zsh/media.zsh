@@ -1,6 +1,6 @@
 # ~/.zsh/media.zsh
 
-# MP4 を HEVC に変換（ビットレート・解像度指定に対応）
+# MP4 を HEVC に変換（ビットレート・解像度指定に対応，音声も再エンコード）
 resizemp4() {
     if [ $# -lt 1 ] || [ $# -gt 4 ]; then
         echo "Usage: resizemp4 input.mp4 [bitrate] [height] [output.mp4]"
@@ -30,7 +30,8 @@ resizemp4() {
         ffmpeg -i "$input" \
           -vf "$scale_opt" \
           -c:v hevc_videotoolbox -b:v "$bitrate" \
-          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
+          -c:a aac -b:a 96k \
+          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart \
           "$tmp"
 
         if [ $? -eq 0 ]; then
@@ -48,10 +49,12 @@ resizemp4() {
         ffmpeg -i "$input" \
           -vf "$scale_opt" \
           -c:v hevc_videotoolbox -b:v "$bitrate" \
-          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart -an \
+          -c:a aac -b:a 96k \
+          -tag:v hvc1 -pix_fmt yuv420p -movflags +faststart \
           "$output"
     fi
 }
+
 
 
 # 画像の長辺 or 縦サイズ基準縮小（デフォルト 720）
